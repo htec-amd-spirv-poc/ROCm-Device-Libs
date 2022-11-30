@@ -75,6 +75,7 @@ macro(opencl_bc_lib)
   set(internal_link_libs ${OPENCL_BC_LIB_INTERNAL_LINK_LIBS})
 
   get_target_property(irif_lib_output irif OUTPUT_NAME)
+  get_target_property(irif_spirv_lib_output irif_spirv OUTPUT_NAME)
 
   # Mirror the install layout structure.
   set(OUTPUT_DIR ${PROJECT_BINARY_DIR}/${INSTALL_ROOT_SUFFIX})
@@ -94,11 +95,25 @@ macro(opencl_bc_lib)
   set_inc_options()
   set(deps)
   foreach(file ${OPENCL_BC_LIB_SOURCES})
+    get_filename_component(fname "${file}" NAME)
     get_filename_component(fname_we "${file}" NAME_WE)
     get_filename_component(fext "${file}" EXT)
     if (fext STREQUAL ".cl")
       set(output "${CMAKE_CURRENT_BINARY_DIR}/${fname_we}${BC_EXT}")
-      add_custom_command(OUTPUT "${output}"
+      if (fname STREQUAL "spirv.cl")
+        add_custom_command(OUTPUT "${output}"
+          COMMAND $<TARGET_FILE:clang> ${inc_options} ${CLANG_OCL_FLAGS}
+            -emit-llvm -Xclang -mlink-builtin-bitcode -Xclang "${irif_spirv_lib_output}"
+            -c "${file}" -o "${output}"
+          DEPENDS "${file}" "${irif_spirv_lib_output}" "${CLANG}"
+          # FIXME: Currently IMPLICIT_DEPENDS is only supported for GNU Makefile,
+          # so as an overly-conservatively workaround to cover all generators
+          # we just assume all .cl sources require irif.h. If all the generators
+          # we care about begin to support IMPLICIT_DEPENDS we won't need this.
+          "${CMAKE_CURRENT_SOURCE_DIR}/../irif_spirv/inc/irif.h"
+          IMPLICIT_DEPENDS C "${file}")
+      else()
+        add_custom_command(OUTPUT "${output}"
         COMMAND $<TARGET_FILE:clang> ${inc_options} ${CLANG_OCL_FLAGS}
           -emit-llvm -Xclang -mlink-builtin-bitcode -Xclang "${irif_lib_output}"
           -c "${file}" -o "${output}"
@@ -109,6 +124,7 @@ macro(opencl_bc_lib)
         # we care about begin to support IMPLICIT_DEPENDS we won't need this.
         "${CMAKE_CURRENT_SOURCE_DIR}/../irif/inc/irif.h"
         IMPLICIT_DEPENDS C "${file}")
+      endif()
       list(APPEND deps "${output}")
       list(APPEND clean_files "${output}")
     endif()
@@ -163,6 +179,7 @@ macro(opencl_bc_lib)
     add_dependencies("${name}" prepare-builtins)
   endif()
   add_dependencies("${name}" irif)
+  add_dependencies("${name}" irif_spirv)
 
   set_directory_properties(PROPERTIES
     ADDITIONAL_MAKE_CLEAN_FILES "${clean_files}")
