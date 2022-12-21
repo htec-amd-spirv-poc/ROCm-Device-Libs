@@ -20,7 +20,7 @@ set(CLANG_OCL_FLAGS -fcolor-diagnostics -Werror -Wno-error=atomic-alignment -x c
   -Xclang -finclude-default-header -nogpulib -cl-no-stdinc "${CLANG_OPTIONS_APPEND}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ocml/inc)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ockl/inc)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../ockl_spirv/inc)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../irif_spirv/inc)
 
 opencl_bc_lib(NAME spirv
