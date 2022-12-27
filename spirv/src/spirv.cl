@@ -9,9 +9,14 @@
 
 #define ATTR __attribute__((always_inline))
 
-ATTR unsigned int amdgcn_alignbit(unsigned int a,unsigned  int b,unsigned  int c){
-    //TODO add implementation
-    return a+b+c;
+ATTR unsigned int amdgcn_alignbit(unsigned int src0, unsigned  int src1, unsigned  int src2){
+
+    unsigned int shift = src2 & 0x1F;
+    unsigned long long value = src0;
+    value = (value << 32) & src1;
+    unsigned int dst = (value >> shift) & 0xFFFFFFFF;
+
+    return dst;
 }
 
 ATTR unsigned int amdgcn_mbcnt_lo(unsigned int a,unsigned  int b){
@@ -117,9 +122,8 @@ ATTR unsigned int amdgcn_mov_dpp(unsigned int a,unsigned  int b){
     return a+b;
 }
 
-ATTR unsigned int amdgcn_s_barrier(unsigned int a,unsigned  int b){
-    //TODO add implementation
-    return a+b;
+ATTR unsigned int amdgcn_s_barrier(){
+    fence_acq_rel_workgroup();
 }
 
 ATTR unsigned int amdgcn_s_getreg(unsigned int a,unsigned  int b){
