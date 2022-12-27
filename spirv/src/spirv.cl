@@ -6,6 +6,7 @@
  *===------------------------------------------------------------------------*/
 
 #include<string.h>
+#include<ockl.h>
 
 #define ATTR __attribute__((always_inline))
 
@@ -19,14 +20,35 @@ ATTR unsigned int amdgcn_alignbit(unsigned int src0, unsigned  int src1, unsigne
     return dst;
 }
 
-ATTR unsigned int amdgcn_mbcnt_lo(unsigned int a,unsigned  int b){
-    //TODO add implementation
-    return a+b;
+/* implementation taken from https://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel*/
+unsigned int count_population(unsigned int value){
+
+    unsigned int count; // store the total here
+    static const int S[] = {1, 2, 4, 8, 16}; // Magic Binary Numbers
+    static const int B[] = {0x55555555, 0x33333333, 0x0F0F0F0F, 0x00FF00FF, 0x0000FFFF};
+
+    count = value - ((value >> 1) & B[0]);
+    count = ((count >> S[1]) & B[1]) + (count & B[1]);
+    count = ((count >> S[2]) + count) & B[2];
+    count = ((count >> S[3]) + count) & B[3];
+    count = ((count >> S[4]) + count) & B[4];
+
+    return count;
 }
 
-ATTR unsigned int amdgcn_mbcnt_hi(unsigned int a,unsigned  int b){
-    //TODO add implementation
-    return a+b;
+ATTR unsigned int amdgcn_mbcnt_lo(unsigned int src0, unsigned  int src1){
+    unsigned int thread_mask = ((1 << __ockl_get_local_id(2)) - 1);
+    unsigned int mask_lo = thread_mask & 0xFFFFFFFF;
+    unsigned dest = count_population(src0 & mask_lo) + src1;
+    return dest;
+}
+
+ATTR unsigned int amdgcn_mbcnt_hi(unsigned int src0, unsigned  int src1){
+
+    unsigned int thread_mask = ((1 << __ockl_get_local_id(2)) - 1);
+    unsigned int mask_hi = (thread_mask >> 32) & 0xFFFFFFFF;
+    unsigned dest = count_population(src0 & mask_hi) + src1;
+    return dest;
 }
 
 ATTR unsigned int amdgcn_ds_bpermute(unsigned int a,unsigned  int b){
@@ -123,7 +145,10 @@ ATTR unsigned int amdgcn_mov_dpp(unsigned int a,unsigned  int b){
 }
 
 ATTR unsigned int amdgcn_s_barrier(){
+
     fence_acq_rel_workgroup();
+
+    return 0;
 }
 
 ATTR unsigned int amdgcn_s_getreg(unsigned int a,unsigned  int b){
