@@ -16,6 +16,8 @@
 
 
 int64_t spirv_local_thread_id(int32_t);
+int32_t spirv_global_thread_id(int32_t);
+int32_t spirv_group_id(int32_t);
 
 ATTR static size_t
 get_global_offset_x(void)
@@ -357,11 +359,9 @@ __ockl_get_global_id(uint dim)
 {
     switch(dim) {
     case 0:
-        return get_global_id_x();
     case 1:
-        return get_global_id_y();
     case 2:
-        return get_global_id_z();
+        return spirv_global_thread_id(dim);
     default:
         return 0;
     }
@@ -385,11 +385,9 @@ __ockl_get_group_id(uint dim)
 {
     switch(dim) {
     case 0:
-        return __builtin_amdgcn_workgroup_id_x();
     case 1:
-        return __builtin_amdgcn_workgroup_id_y();
     case 2:
-        return __builtin_amdgcn_workgroup_id_z();
+        return spriv_group_id(dim);
     default:
         return 0;
     }
