@@ -56,9 +56,10 @@ ATTR unsigned int amdgcn_ds_bpermute(unsigned int a,unsigned  int b){
     return a+b;
 }
 
+int spirv_sub_group_shuffle_ui32(int, int);
+
 ATTR unsigned int amdgcn_ds_permute(unsigned int a,unsigned  int b){
-    //TODO add implementation
-    return a+b;
+    return spirv_sub_group_shuffle_ui32(a, b);
 }
 
 void fence_acquire();
