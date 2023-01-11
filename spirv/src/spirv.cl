@@ -157,7 +157,50 @@ ATTR unsigned int amdgcn_s_getreg(unsigned int a,unsigned  int b){
     return a+b;
 }
 
-ATTR unsigned int amdgcn_uicmp(unsigned int a,unsigned  int b){
-    //TODO add implementation
-    return a+b;
+// Implement unsigned integer compare as defined in:
+// https://amd.wpenginepowered.com/wordpress/media/2013/12/AMD_GCN3_Instruction_Set_Architecture_rev1.1.pdf
+
+// Compare types are defined in:
+// llvm-project/llvm/include/llvm/IR/InstrTypes.h
+#define ICMP_EQ      32 ///< equal
+#define ICMP_NE      33 ///< not equal
+#define ICMP_UGT     34 ///< unsigned greater than
+#define ICMP_UGE     35 ///< unsigned greater or equal
+#define ICMP_ULT     36 ///< unsigned less than
+#define ICMP_ULE     37 ///< unsigned less or equal
+
+ATTR unsigned int amdgcn_uicmp(unsigned int predicate, unsigned  int compared_to, const int cmp_type){
+
+    // for __ballot, only ICMP_NE is needed
+
+    switch (cmp_type)
+    {
+    case ICMP_EQ:
+        return predicate == compared_to;
+        break;
+
+    case ICMP_NE:
+        return predicate != compared_to;
+        break;
+
+    case ICMP_UGT:
+        return predicate >  compared_to;
+        break;
+
+    case ICMP_UGE:
+        return predicate >= compared_to;
+        break;
+
+    case ICMP_ULT:
+        return predicate <  compared_to;
+        break;
+
+    case ICMP_ULE:
+        return predicate <= compared_to;
+        break;
+
+    default:
+        return -1;
+        break;
+    }
 }
